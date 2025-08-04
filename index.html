@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToriSearch - Мощный OSINT инструмент</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Orbitron:wght@500;700&display=swap');
+        
+        :root {
+            --primary-color: #4a00e0;
+            --secondary-color: #8e2de2;
+            --accent-color: #00c6ff;
+            --neon-pink: #ff00ff;
+            --neon-blue: #00ffff;
+            --dark-bg: #0f0f1a;
+            --darker-bg: #0a0a12;
+            --panel-bg: rgba(26, 26, 46, 0.8);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            border: 2px solid var(--dark-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(var(--secondary-color), var(--accent-color));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            color: var(--text-color);
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-color: var(--dark-bg);
+        }
+
+        /* Cosmic Background - Full Screen */
+        .cosmic-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            overflow: hidden;
+        }
+        
+        /* Stars Animation */
+        @keyframes animStar {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-2000px); }
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* Nebula Effect */
+        .nebula {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(142, 45, 226, 0.3) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(0, 198, 255, 0.3) 0%, transparent 30%),
+                radial-gradient(circle at 40% 60%, rgba(255, 0, 255, 0.2) 0%, transparent 30%);
+            animation: pulseNebula 30s ease infinite alternate;
+        }
+        
+        @keyframes pulseNebula {
+            0% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.02); }
+            100% { opacity: 0.3; transform: scale(1); }
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--panel-border);
+            transition: all 0.5s ease;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: logoFlow 6s infinite alternate;
+            text-shadow: 0 0 10px rgba(74, 0, 224, 0.7);
+            position: relative;
+        }
+        
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s ease;
+        }
+        
+        .logo:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        
+        .logo-steam {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            bottom: -20px;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .logo:hover .logo-steam {
+            opacity: 0.6;
+        }
+        
+        .steam-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(to right, var(--accent-color), var(--neon-blue));
+            border-radius: 50%;
+            filter: blur(1px);
+            animation: steamRise 3s infinite ease-out;
+            opacity: 0;
+        }
+        
+        @keyframes steamRise {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 0.6; }
+            100% { transform: translateY(-20px) scale(1.5); opacity: 0; }
+        }
+        
+        @keyframes logoFlow {
+            0% { 
+                text-shadow: 0 0 10px rgba(74, 0, 224, 0.7), 
+                            0 0 20px rgba(74, 0, 224, 0.5);
+                background-position: 0% 50%;
+            }
+            25% {
+                text-shadow: 0 0 15px rgba(142, 45, 226, 0.7),
+                            0 0 30px rgba(142, 45, 226, 0.5);
+            }
+            50% { 
+                text-shadow: 0 0 20px rgba(0, 198, 255, 0.7),
+                            0 0 40px rgba(0, 198, 255, 0.5);
+                background-position: 100% 50%;
+            }
+            75% {
+                text-shadow: 0 0 15px rgba(255, 0, 255, 0.7),
+                            0 0 30px rgba(255, 0, 255, 0.5);
+            }
+            100% { 
+                text-shadow: 0 0 10px rgba(74, 0, 224, 0.7),
+                            0 0 20px rgba(74, 0, 224, 0.5);
+                background-position: 0% 50%;
+            }
+        }
+        
+        .nav {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .nav a:hover {
+            color: var(--accent-color);
+            background: rgba(0, 198, 255, 0.1);
+            text-shadow: 0 0 10px var(--accent-color);
+        }
+        
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            transition: width 0.3s ease;
+        }
+        
+        .nav a:hover::after {
+            width: 100%;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 180px 0 100px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            animation: titleGlow 3s infinite alternate;
+            position: relative;
+        }
+        
+        @keyframes titleGlow {
+            from {
+                text-shadow: 0 0 10px rgba(74, 0, 224, 0.5);
+            }
+            to {
+                text-shadow: 0 0 20px rgba(74, 0, 224, 0.7), 0 0 30px rgba(0, 198, 255, 0.5);
+            }
+        }
+        
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+        
+        .slogan-carousel {
+            position: relative;
+            height: 60px;
+            overflow: hidden;
+            margin: 20px auto;
+            width: 80%;
+        }
+        
+        .slogan {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            opacity: 0;
+            transition: all 0.8s ease;
+            font-size: 20px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: sloganGlow 3s infinite alternate;
+        }
+        
+        @keyframes sloganGlow {
+            0% { text-shadow: 0 0 10px rgba(74, 0, 224, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(142, 45, 226, 0.7); }
+            100% { text-shadow: 0 0 30px rgba(0, 198, 255, 0.9); }
+        }
+        
+        .slogan.active {
+            opacity: 1;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+            z-index: -1;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(74, 0, 224, 0.5), 0 0 20px rgba(0, 198, 255, 0.3);
+        }
+        
+        /* Features Section */
+        .section {
+            padding: 100px 0;
+            position: relative;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
+        .section.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .section-title {
+            font-size: 36px;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin-bottom: 60px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), transparent);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            transition: all 0.5s ease;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        
+        .feature-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-color);
+        }
+        
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.2);
+            text-shadow: 0 0 20px var(--accent-color);
+        }
+        
+        .feature-card h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        
+        /* Pricing Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .pricing-card {
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        
+        .pricing-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .pricing-card:hover {
+            border: 1px solid var(--accent-color);
+            box-shadow: 0 0 30px rgba(0, 198, 255, 0.3);
+        }
+        
+        .popular-badge {
+            position: absolute;
+            top: 15px;
+            right: -30px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 5px 40px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pricing-card:hover .popular-badge {
+            opacity: 1;
+        }
+        
+        .pricing-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        
+        .price {
+            font-size: 42px;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(74, 0, 224, 0.5);
+        }
+        
+        .price span {
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+        
+        .features-list {
+            margin-bottom: 30px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+        
+        .feature-item i {
+            color: var(--accent-color);
+            margin-right: 10px;
+            text-shadow: 0 0 5px rgba(0, 198, 255, 0.5);
+        }
+        
+        .feature-item.disabled {
+            color: var(--text-muted);
+        }
+        
+        .feature-item.disabled i {
+            color: var(--text-muted);
+            text-shadow: none;
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(10, 10, 18, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 50px 0;
+            text-align: center;
+            border-top: 1px solid var(--panel-border);
+        }
+        
+        .footer-logo {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: logoFlow 6s infinite alternate;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent-color);
+            background: rgba(0, 198, 255, 0.1);
+        }
+        
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        /* Category Selection Animation */
+        .category-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .category-btn {
+            padding: 10px 20px;
+            background: rgba(0, 198, 255, 0.1);
+            border: 1px solid var(--panel-border);
+            color: var(--text-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+        
+        .category-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+        }
+        
+        .category-btn:hover:not(.active) {
+            background: rgba(0, 198, 255, 0.2);
+            border-color: var(--accent-color);
+        }
+        
+        .category-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: translateY(20px);
+        }
+        
+        .category-content.active {
+            display: grid;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Telegram Channel Section */
+        .telegram-section {
+            text-align: center;
+            padding: 80px 0;
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(10px);
+            margin-top: 50px;
+            border-top: 1px solid var(--panel-border);
+            border-bottom: 1px solid var(--panel-border);
+        }
+        
+        .telegram-section h2 {
+            font-size: 32px;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .telegram-section p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        
+        .telegram-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #0088cc, #00aced);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .telegram-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #00aced, #0088cc);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                display: none;
+            }
+            
+            .hero {
+                padding: 150px 0 80px;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .section-title {
+                font-size: 28px;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-card, .pricing-card {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+            
+            .slogan-carousel {
+                height: 80px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Cosmic Background -->
+    <div class="cosmic-background"></div>
+    <div class="nebula"></div>
+    <div class="stars"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    ToriSearch
+                    <div class="logo-steam">
+                        <div class="steam-particle" style="left: 10%; animation-delay: 0.5s;"></div>
+                        <div class="steam-particle" style="left: 30%; animation-delay: 1s;"></div>
+                        <div class="steam-particle" style="left: 50%; animation-delay: 1.5s;"></div>
+                        <div class="steam-particle" style="left: 70%; animation-delay: 2s;"></div>
+                        <div class="steam-particle" style="left: 90%; animation-delay: 2.5s;"></div>
+                    </div>
+                </div>
+                <nav class="nav">
+                    <a href="#features">Возможности</a>
+                    <a href="#scripts">Скрипты</a>
+                    <a href="#pricing">Тарифы</a>
+                    <a href="#telegram">Канал</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>ToriSearch</h1>
+            
+            <div class="slogan-carousel">
+                <div class="slogan active">Мощный инструмент для OSINT-разведки</div>
+                <div class="slogan">Доступ к 1.2ТБ облачных данных</div>
+                <div class="slogan">Интеграция с нейросетью DeepSeek</div>
+                <div class="slogan">Профессиональные скрипты для анализа</div>
+            </div>
+            
+            <a href="#pricing" class="btn">Начать использовать</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="section-title">Возможности</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>Мощный поиск</h3>
+                    <p>4 API сервиса для комплексного поиска информации по различным параметрам</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Облачная база</h3>
+                    <p>Доступ к облачному хранилищу с 1.2ТБ актуальных данных</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>AI интеграция</h3>
+                    <p>Чат с нейросетью DeepSeek для анализа и обработки данных</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts Section -->
+    <section class="section" id="scripts">
+        <div class="container">
+            <h2 class="section-title">Скрипты</h2>
+            
+            <div class="category-selector">
+                <div class="category-btn active" data-category="all">Все</div>
+                <div class="category-btn" data-category="security">Безопасность</div>
+                <div class="category-btn" data-category="search">Поиск</div>
+                <div class="category-btn" data-category="analysis">Анализ</div>
+            </div>
+            
+            <div class="category-content active" id="all">
+                <div class="features-grid">
+                    <div class="feature-card" data-categories="security">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3>Шифрование</h3>
+                        <p>Безопасное шифрование файлов с AES-256</p>
+                    </div>
+                    <div class="feature-card" data-categories="security">
+                        <div class="feature-icon">
+                            <i class="fas fa-unlock"></i>
+                        </div>
+                        <h3>Дешифровка</h3>
+                        <p>Расшифровка защищенных файлов</p>
+                    </div>
+                    <div class="feature-card" data-categories="security">
+                        <div class="feature-icon">
+                            <i class="fas fa-mask"></i>
+                        </div>
+                        <h3>Создание Стиллера</h3>
+                        <p>Построение скрытых модулей</p>
+                    </div>
+                    <div class="feature-card" data-categories="search">
+                        <div class="feature-icon">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                        <h3>Массовый поиск</h3>
+                        <p>Обработка множества запросов</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-content" id="security">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3>Шифрование</h3>
+                        <p>Шифрование файлов py формата</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-unlock"></i>
+                        </div>
+                        <h3>Дешифровка</h3>
+                        <p>Расшифровка защищенных файлов</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mask"></i>
+                        </div>
+                        <h3>Создание Стиллера</h3>
+                        <p>Построение скрытых модулей</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-content" id="search">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                        <h3>Массовый поиск</h3>
+                        <p>Обработка множества запросов</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-content" id="analysis">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3>Автосборщик</h3>
+                        <p>Автоматический сбор данных</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <h3>Анализ паттернов</h3>
+                        <p>Поиск уязвимостей</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        <h3>Геотрекинг</h3>
+                        <p>Создание интернет "жучка" для отслеживания</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-broom"></i>
+                        </div>
+                        <h3>Очистка данных</h3>
+                        <p>Удаление следов и метаданных</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+        <div class="container">
+            <h2 class="section-title">Тарифы</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Базовый</h3>
+                    <div class="price">650₽ <span>/ месяц</span></div>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Полный доступ к функциям поиска
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> 4 API сервиса
+                        </div>
+                        <div class="feature-item disabled">
+                            <i class="fas fa-times"></i> Доступ к облачной базе (1.2ТБ)
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Все скрипты
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Чат с DeepSeek AI
+                        </div>
+                    </div>
+                    <a href="https://t.me/JSdada" class="btn" target="_blank">Купить</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <div class="popular-badge">Популярный</div>
+                    <h3>Стандарт</h3>
+                    <div class="price">1400₽ <span>/ 3 месяца</span></div>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Полный доступ к функциям поиска
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> 4 API сервиса
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Ограниченный доступ к облаку
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Все скрипты
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Приоритетная поддержка
+                        </div>
+                    </div>
+                    <a href="https://t.me/JSdada" class="btn" target="_blank">Купить</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Навсегда</h3>
+                    <div class="price">2800₽ <span>/ вечно</span></div>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Полный доступ к функциям поиска
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> 4 API сервиса
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Полный доступ к облаку (1.2ТБ)
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> Все скрипты + эксклюзивные
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check"></i> VIP поддержка
+                        </div>
+                    </div>
+                    <a href="https://t.me/JSdada" class="btn" target="_blank">Купить</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Telegram Channel Section -->
+    <section class="telegram-section" id="telegram">
+        <div class="container">
+            <h2>Присоединяйтесь к нашему Telegram-каналу</h2>
+            <p>Получайте последние обновления, эксклюзивные материалы и поддержку от нашей команды</p>
+            <a href="https://t.me/ToriSearch" class="telegram-btn" target="_blank">
+                <i class="fab fa-telegram"></i> @ToriSearch
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logo">ToriSearch</div>
+            <div class="footer-links">
+                <a href="#features">Возможности</a>
+                <a href="#scripts">Скрипты</a>
+                <a href="#pricing">Тарифы</a>
+                <a href="#telegram">Канал</a>
+            </div>
+            <p class="footer-text">© 2023 ToriSearch. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize stars with better animation
+        function initStars() {
+            const starsContainer = document.querySelector('.stars');
+            const starsCount = 500;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                const size = Math.random() * 2 + 0.5;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.backgroundColor = 'white';
+                star.style.borderRadius = '50%';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.opacity = Math.random() * 0.8 + 0.1;
+                
+                const duration = Math.random() * 100 + 50;
+                const delay = Math.random() * 20;
+                star.style.animation = `animStar ${duration}s linear ${delay}s infinite`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Slogan carousel
+        function initSloganCarousel() {
+            const slogans = document.querySelectorAll('.slogan');
+            let current = 0;
+            
+            setInterval(() => {
+                slogans[current].classList.remove('active');
+                current = (current + 1) % slogans.length;
+                slogans[current].classList.add('active');
+            }, 3000);
+        }
+        
+        // Category selection with smooth transitions
+        function initCategorySelection() {
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            const categoryContents = document.querySelectorAll('.category-content');
+            
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    categoryBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const categoryId = this.getAttribute('data-category');
+                    
+                    categoryContents.forEach(content => {
+                        content.classList.remove('active');
+                        setTimeout(() => {
+                            content.style.display = 'none';
+                        }, 500);
+                    });
+                    
+                    setTimeout(() => {
+                        if (categoryId === 'all') {
+                            document.getElementById('all').style.display = 'grid';
+                            setTimeout(() => {
+                                document.getElementById('all').classList.add('active');
+                            }, 10);
+                        } else {
+                            document.getElementById(categoryId).style.display = 'grid';
+                            setTimeout(() => {
+                                document.getElementById(categoryId).classList.add('active');
+                            }, 10);
+                        }
+                    }, 500);
+                });
+            });
+        }
+        
+        // Scroll animations
+        function animateOnScroll() {
+            const sections = document.querySelectorAll('.section');
+            const cards = document.querySelectorAll('.feature-card, .pricing-card');
+            const windowHeight = window.innerHeight;
+            
+            sections.forEach(section => {
+                const sectionPosition = section.getBoundingClientRect().top;
+                if (sectionPosition < windowHeight - 100) {
+                    section.classList.add('active');
+                }
+            });
+            
+            cards.forEach(card => {
+                const cardPosition = card.getBoundingClientRect().top;
+                if (cardPosition < windowHeight - 100) {
+                    card.classList.add('visible');
+                }
+            });
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            initStars();
+            initSloganCarousel();
+            initCategorySelection();
+            animateOnScroll();
+            
+            document.querySelector('.hero').style.opacity = '1';
+            document.querySelector('.hero').style.transform = 'translateY(0)';
+            
+            window.addEventListener('scroll', function() {
+                animateOnScroll();
+            });
+            
+            const logo = document.querySelector('.logo');
+            logo.addEventListener('mouseenter', function() {
+                const steamParticles = document.querySelectorAll('.steam-particle');
+                steamParticles.forEach(particle => {
+                    particle.style.animation = `steamRise 3s ${particle.style.animationDelay} ease-out infinite`;
+                });
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
